@@ -38,7 +38,7 @@ func TestParseRecordsAndData(t *testing.T) {
 		}
 
 		if ver != cas.ver {
-			t.Errorf("%d: got %q, want %q", ver, cas.ver)
+			t.Errorf("%d: got %q, want %q", i, ver, cas.ver)
 		}
 	}
 }
