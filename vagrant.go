@@ -228,15 +228,41 @@ func (v *Vagrant) List() ([]*Vagrant, error) {
 	return boxes, nil
 }
 
+// Provision executes "vagrant provision" for the given vagrantfile. The returned channel
+// contains the output stream. At the end of the output, the error is put into
+// the Error field if there is any.
+func (v *Vagrant) Provision() (<-chan *CommandOutput, error) {
+	if v.ProviderName != "" {
+		return v.vagrantCommand().start("provision", "--provider", v.ProviderName)
+	}
+
+	return v.vagrantCommand().start("provision")
+}
+
+// VagrantOption is a generic interface that all options to vagrant commands implement
+type VagrantOption interface {}
+
+// VagrantOptionProvision forces re-provisioning of the vagrant machine
+type VagrantOptionProvision struct {
+  VagrantOption
+}
+
 // Up executes "vagrant up" for the given vagrantfile. The returned channel
 // contains the output stream. At the end of the output, the error is put into
 // the Error field if there is any.
-func (v *Vagrant) Up() (<-chan *CommandOutput, error) {
+func (v *Vagrant) Up(opts ...VagrantOption) (<-chan *CommandOutput, error) {
+  args := []string{"up"}
 	if v.ProviderName != "" {
-		return v.vagrantCommand().start("up", "--provider", v.ProviderName)
+    args = append(args, []string{"--provider", v.ProviderName}...)
 	}
+  for _, opt := range opts {
+    switch opt.(type) {
+      case VagrantOptionProvision:
+        args = append(args, "--provision")
+    }
+  }
 
-	return v.vagrantCommand().start("up")
+  return v.vagrantCommand().start(args...)
 }
 
 // Halt executes "vagrant halt". The returned reader contains the output
